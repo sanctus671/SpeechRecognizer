@@ -197,7 +197,7 @@ public class SpeechRecognition extends CordovaPlugin {
     }
     
     
-    private void firePartialRecognitionEvent(ArrayList<String> transcripts, float[] confidences) {
+    private void firePartialRecognitionEvent(ArrayList<String> transcripts) {
         JSONObject event = new JSONObject();
         JSONArray results = new JSONArray();
         try {
@@ -206,9 +206,6 @@ public class SpeechRecognition extends CordovaPlugin {
                 JSONObject result = new JSONObject();
                 result.put("transcript", transcripts.get(i));
                 result.put("final", true);
-                if (confidences != null) {
-                    result.put("confidence", confidences[i]);
-                }
                 alternatives.put(result);
                 results.put(alternatives);
             }
@@ -333,10 +330,9 @@ public class SpeechRecognition extends CordovaPlugin {
             String str = new String();
             Log.d(LOG_TAG, "partial results");
             ArrayList<String> transcript = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            float[] confidence = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (transcript.size() > 0) {
                 Log.d(LOG_TAG, "fire partial recognition event");
-                firePartialRecognitionEvent(transcript, confidence);
+                firePartialRecognitionEvent(transcript);
             } else {
                 Log.d(LOG_TAG, "fire no partial match event");
             }           
