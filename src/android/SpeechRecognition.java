@@ -31,7 +31,6 @@ public class SpeechRecognition extends CordovaPlugin {
     public static final String ACTION_SPEECH_RECOGNIZE_START = "start";
     public static final String ACTION_SPEECH_RECOGNIZE_STOP = "stop";
     public static final String ACTION_SPEECH_RECOGNIZE_ABORT = "abort";
-    public static final String ACTION_SPEECH_RECOGNIZE_PARTIAL = "partial";
     public static final String NOT_PRESENT_MESSAGE = "Speech recognition is not present or enabled";
 
     private CallbackContext speechRecognizerCallbackContext;
