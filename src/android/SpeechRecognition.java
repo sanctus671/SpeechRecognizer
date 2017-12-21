@@ -31,6 +31,7 @@ public class SpeechRecognition extends CordovaPlugin {
     public static final String ACTION_SPEECH_RECOGNIZE_START = "start";
     public static final String ACTION_SPEECH_RECOGNIZE_STOP = "stop";
     public static final String ACTION_SPEECH_RECOGNIZE_ABORT = "abort";
+    public static final String ACTION_SPEECH_RECOGNIZE_PARTIAL = "partial";
     public static final String NOT_PRESENT_MESSAGE = "Speech recognition is not present or enabled";
 
     private CallbackContext speechRecognizerCallbackContext;
@@ -106,6 +107,7 @@ public class SpeechRecognition extends CordovaPlugin {
             this.speechRecognizerCallbackContext = callbackContext;
             this.promptForMic();
         }
+        
         else if (ACTION_SPEECH_RECOGNIZE_STOP.equals(action)) {
             stop(false);
         }
@@ -126,6 +128,7 @@ public class SpeechRecognition extends CordovaPlugin {
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,"voice.recognition.test");
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang);
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true);      
 
         intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5);
 
@@ -192,6 +195,37 @@ public class SpeechRecognition extends CordovaPlugin {
         pr.setKeepCallback(true);
         this.speechRecognizerCallbackContext.sendPluginResult(pr); 
     }
+    
+    
+    private void firePartialRecognitionEvent(ArrayList<String> transcripts, float[] confidences) {
+        JSONObject event = new JSONObject();
+        JSONArray results = new JSONArray();
+        try {
+            for(int i=0; i<transcripts.size(); i++) {
+                JSONArray alternatives = new JSONArray();
+                JSONObject result = new JSONObject();
+                result.put("transcript", transcripts.get(i));
+                result.put("final", true);
+                if (confidences != null) {
+                    result.put("confidence", confidences[i]);
+                }
+                alternatives.put(result);
+                results.put(alternatives);
+            }
+            event.put("type", "partial");
+            event.put("emma", null);
+            event.put("interpretation", null);
+            event.put("results", results);
+        } catch (JSONException e) {
+            // this will never happen
+        }
+        PluginResult pr = new PluginResult(PluginResult.Status.OK, event);
+        pr.setKeepCallback(true);
+        this.speechRecognizerCallbackContext.sendPluginResult(pr); 
+    }    
+    
+    
+    
 
     private void fireEvent(String type) {
         JSONObject event = new JSONObject();
@@ -296,7 +330,16 @@ public class SpeechRecognition extends CordovaPlugin {
 
         @Override
         public void onPartialResults(Bundle partialResults) {
+            String str = new String();
             Log.d(LOG_TAG, "partial results");
+            ArrayList<String> transcript = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+            float[] confidence = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+            if (transcript.size() > 0) {
+                Log.d(LOG_TAG, "fire partial recognition event");
+                firePartialRecognitionEvent(transcript, confidence);
+            } else {
+                Log.d(LOG_TAG, "fire no partial match event");
+            }           
         }
 
         @Override
@@ -306,7 +349,9 @@ public class SpeechRecognition extends CordovaPlugin {
             listening = true;
         }
 
-
+        
+        
+        
         @Override
         public void onResults(Bundle results) {
             Log.d(LOG_TAG, "results");
